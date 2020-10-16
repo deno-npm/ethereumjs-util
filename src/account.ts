@@ -1,19 +1,20 @@
-import * as assert from 'assert'
-import * as BN from 'bn.js'
-import * as rlp from 'rlp'
-import { stripHexPrefix } from 'ethjs-util'
-import { KECCAK256_RLP, KECCAK256_NULL } from './constants'
-import { zeros, bufferToHex, toBuffer } from './bytes'
-import { keccak, keccak256, keccakFromString, rlphash } from './hash'
-import { assertIsHexString, assertIsBuffer } from './helpers'
-import { BNLike, BufferLike, bnToRlp } from './types'
+import {
+  BN,
+  cryptography,
+  rlp,
+} from "../deps.js";
+import { KECCAK256_RLP, KECCAK256_NULL } from './constants.ts'
+import { zeros, bufferToHex, toBuffer } from './bytes.ts'
+import { keccak, keccak256, keccakFromString, rlphash } from './hash.ts'
+import { assertIsHexString, assertIsBuffer } from './helpers.ts'
+import { BNLike, BufferLike, bnToRlp } from './types.ts'
 
 const {
   privateKeyVerify,
   publicKeyCreate,
   publicKeyVerify,
   publicKeyConvert,
-} = require('ethereum-cryptography/secp256k1')
+} = cryptography
 
 export interface AccountData {
   nonce?: BNLike
@@ -142,7 +143,7 @@ export const isValidAddress = function(hexAddress: string): boolean {
  */
 export const toChecksumAddress = function(hexAddress: string, eip1191ChainId?: number): string {
   assertIsHexString(hexAddress)
-  const address = stripHexPrefix(hexAddress).toLowerCase()
+  const address = hexAddress.replace(/^0x/, '').toLowerCase()
 
   const prefix = eip1191ChainId !== undefined ? eip1191ChainId.toString() + '0x' : ''
 
@@ -203,8 +204,9 @@ export const generateAddress2 = function(from: Buffer, salt: Buffer, initCode: B
   assertIsBuffer(salt)
   assertIsBuffer(initCode)
 
-  assert(from.length === 20)
-  assert(salt.length === 32)
+  if(from.length !== 20 || salt.length !== 32){
+    throw new Error();
+  }
 
   const address = keccak256(
     Buffer.concat([Buffer.from('ff', 'hex'), from, salt, keccak256(initCode)]),
@@ -251,7 +253,9 @@ export const pubToAddress = function(pubKey: Buffer, sanitize: boolean = false):
   if (sanitize && pubKey.length !== 64) {
     pubKey = Buffer.from(publicKeyConvert(pubKey, false).slice(1))
   }
-  assert(pubKey.length === 64)
+  if(pubKey.length !== 64){
+    throw new Error();
+  }
   // Only take the lower 160bits of the hash
   return keccak(pubKey).slice(-20)
 }

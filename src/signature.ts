@@ -1,8 +1,12 @@
-const { ecdsaSign, ecdsaRecover, publicKeyConvert } = require('ethereum-cryptography/secp256k1')
-import * as BN from 'bn.js'
-import { toBuffer, setLengthLeft, bufferToHex } from './bytes'
-import { keccak } from './hash'
-import { assertIsBuffer } from './helpers'
+import {
+  BN,
+  cryptography,
+} from '../deps.js';
+import { toBuffer, setLengthLeft, bufferToHex } from './bytes.js';
+import { keccak } from './hash.js';
+import { assertIsBuffer } from './helpers.js';
+
+const { ecdsaSign, ecdsaRecover, publicKeyConvert } = cryptography;
 
 export interface ECDSASignature {
   v: number

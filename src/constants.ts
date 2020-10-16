@@ -1,5 +1,4 @@
-const Buffer = require('buffer').Buffer
-import * as BN from 'bn.js'
+import {BN} from '../deps.js'
 
 /**
  * The max integer that this VM can handle

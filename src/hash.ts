@@ -1,9 +1,8 @@
-const { keccak224, keccak384, keccak256: k256, keccak512 } = require('ethereum-cryptography/keccak')
-const createHash = require('create-hash')
-import * as ethjsUtil from 'ethjs-util'
-import * as rlp from 'rlp'
-import { toBuffer, setLengthLeft } from './bytes'
-import { assertIsString, assertIsBuffer, assertIsArray, assertIsHexString } from './helpers'
+import {
+  rlp,
+} from '../deps.js'
+import { toBuffer, setLengthLeft } from './bytes.ts'
+import { assertIsString, assertIsBuffer, assertIsArray, assertIsHexString } from './helpers.ts'
 
 /**
  * Creates Keccak hash of a Buffer input
@@ -14,16 +13,32 @@ export const keccak = function(a: Buffer, bits: number = 256): Buffer {
   assertIsBuffer(a)
   switch (bits) {
     case 224: {
-      return keccak224(a)
+      return Buffer.from(
+        createHash('keccak224')
+          .update(a)
+          .digest()
+      );
     }
     case 256: {
-      return k256(a)
+      return Buffer.from(
+        createHash('keccak256')
+          .update(a)
+          .digest()
+      );
     }
     case 384: {
-      return keccak384(a)
+      return Buffer.from(
+        createHash('keccak384')
+          .update(a)
+          .digest()
+      );
     }
     case 512: {
-      return keccak512(a)
+      return Buffer.from(
+        createHash('keccak512')
+          .update(a)
+          .digest()
+      );
     }
     default: {
       throw new Error(`Invald algorithm: keccak${bits}`)
@@ -36,7 +51,11 @@ export const keccak = function(a: Buffer, bits: number = 256): Buffer {
  * @param a The input data (Buffer)
  */
 export const keccak256 = function(a: Buffer): Buffer {
-  return keccak(a)
+  return Buffer.from(
+    createHash('keccak256')
+      .update(a)
+      .digest()
+  );
 }
 
 /**
@@ -103,6 +122,9 @@ export const sha256FromArray = function(a: number[]): Buffer {
  */
 const _sha256 = function(a: any): Buffer {
   a = toBuffer(a)
+  // createHash('sha256')
+  //   .update(x)
+  //   .digest()
   return createHash('sha256')
     .update(a)
     .digest()
@@ -145,6 +167,9 @@ export const ripemd160FromArray = function(a: number[], padded: boolean): Buffer
  */
 const _ripemd160 = function(a: any, padded: boolean): Buffer {
   a = toBuffer(a)
+    // createHash('ripemd160')
+  //   .update(x)
+  //   .digest()
   const hash = createHash('rmd160')
     .update(a)
     .digest()

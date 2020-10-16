@@ -1,7 +1,7 @@
-import * as ethjsUtil from 'ethjs-util'
-import * as assert from 'assert'
-import * as rlp from 'rlp'
-import { toBuffer, baToJSON, unpadBuffer } from './bytes'
+import {
+  rlp,
+} from "../deps.js";
+import { toBuffer, baToJSON, unpadBuffer } from './bytes.js'
 
 /**
  * Defines properties on a `Object`. It make the assumption that underlying data is binary.
@@ -49,15 +49,13 @@ export const defineProperties = function(self: any, fields: any, data?: any) {
 
       if (field.allowLess && field.length) {
         v = unpadBuffer(v)
-        assert(
-          field.length >= v.length,
-          `The field ${field.name} must not have more ${field.length} bytes`,
-        )
+        if(field.length < v.length){
+          throw new Error(`The field ${field.name} must not have more ${field.length} bytes`);
+        }
       } else if (!(field.allowZero && v.length === 0) && field.length) {
-        assert(
-          field.length === v.length,
-          `The field ${field.name} must have byte length of ${field.length}`,
-        )
+        if(field.length !== v.length){
+          throw new Error(`The field ${field.name} must have byte length of ${field.length}`);
+        }
       }
 
       self.raw[i] = v
@@ -88,7 +86,7 @@ export const defineProperties = function(self: any, fields: any, data?: any) {
   // if the constuctor is passed data
   if (data) {
     if (typeof data === 'string') {
-      data = Buffer.from(ethjsUtil.stripHexPrefix(data), 'hex')
+      data = Buffer.from(data.replace(/^0x/, ''), 'hex')
     }
 
     if (Buffer.isBuffer(data)) {

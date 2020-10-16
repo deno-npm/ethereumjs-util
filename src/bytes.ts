@@ -1,7 +1,29 @@
-import * as BN from 'bn.js'
-import { intToBuffer, stripHexPrefix, padToEven, isHexString, isHexPrefixed } from 'ethjs-util'
-import { TransformableToArray, TransformableToBuffer } from './types'
-import { assertIsBuffer, assertIsArray, assertIsHexString } from './helpers'
+import {BN} from '../deps.js'
+import { TransformableToArray, TransformableToBuffer } from './types.js'
+import { assertIsBuffer, assertIsArray, assertIsHexString } from './helpers.js'
+
+function intToHex(i: number) {
+  var hex = i.toString(16);
+
+  return `0x${hex}`;
+}
+
+function intToBuffer(i: number) {
+  const hex = intToHex(i);
+
+  return Buffer.from(padToEven(hex.slice(2)), 'hex');
+}
+
+/**
+ * Pads a `String` to have an even length
+ */
+function padToEven(value: string) {
+  if (value.length % 2) {
+    return `0${value}`;
+  }
+
+  return value;
+}
 
 /**
  * Returns a buffer filled with 0s.
@@ -87,7 +109,7 @@ export const unpadArray = function(a: number[]): number[] {
  */
 export const unpadHexString = function(a: string): string {
   assertIsHexString(a)
-  a = stripHexPrefix(a)
+  a = a.replace(/^0x/, '')
   return stripZeros(a) as string
 }
 
@@ -136,12 +158,14 @@ export const toBuffer = function(
   }
 
   if (typeof v === 'string') {
-    if (!isHexString(v)) {
+    try {
+      assertIsHexString(v);
+    }catch(e){
       throw new Error(
         `Cannot convert string to buffer. toBuffer only supports 0x-prefixed hex strings and this string was given: ${v}`,
       )
     }
-    return Buffer.from(padToEven(stripHexPrefix(v)), 'hex')
+    return Buffer.from(padToEven(v.replace(/^0x/, '')), 'hex')
   }
 
   if (typeof v === 'number') {
@@ -206,7 +230,7 @@ export const addHexPrefix = function(str: string): string {
     return str
   }
 
-  return isHexPrefixed(str) ? str : '0x' + str
+  return /^0x/.test(str) ? str : '0x' + str
 }
 
 /**

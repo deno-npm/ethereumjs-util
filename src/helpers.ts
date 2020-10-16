@@ -1,4 +1,12 @@
-import { isHexString } from 'ethjs-util'
+function isHexString(value: string, length?: number): boolean {
+  if (typeof(value) !== 'string' || !value.match(/^0x[0-9A-Fa-f]*$/)) {
+    return false;
+  }
+
+  if (length && value.length !== 2 + 2 * length) { return false; }
+
+  return true;
+}
 
 /**
  * Throws if a string is not hex prefixed
@@ -6,8 +14,7 @@ import { isHexString } from 'ethjs-util'
  */
 export const assertIsHexString = function(input: string): void {
   if (!isHexString(input)) {
-    const msg = `This method only supports 0x-prefixed hex strings but input was: ${input}`
-    throw new Error(msg)
+    throw new Error(`This method only supports 0x-prefixed hex strings but input was: ${input}`);
   }
 }
 
