@@ -1,4 +1,7 @@
-import {BN} from '../deps.js'
+import {
+  BN,
+  Buffer,
+} from '../deps.js'
 
 /**
  * The max integer that this VM can handle
@@ -19,7 +22,7 @@ export const TWO_POW256: BN = new BN(
 /**
  * Keccak-256 hash of null
  */
-export const KECCAK256_NULL_S: string =
+export const KECCAK256_NULL_S =
   'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470'
 
 /**
@@ -30,7 +33,7 @@ export const KECCAK256_NULL: Buffer = Buffer.from(KECCAK256_NULL_S, 'hex')
 /**
  * Keccak-256 of an RLP of an empty array
  */
-export const KECCAK256_RLP_ARRAY_S: string =
+export const KECCAK256_RLP_ARRAY_S =
   '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347'
 
 /**
@@ -41,7 +44,7 @@ export const KECCAK256_RLP_ARRAY: Buffer = Buffer.from(KECCAK256_RLP_ARRAY_S, 'h
 /**
  * Keccak-256 hash of the RLP of null
  */
-export const KECCAK256_RLP_S: string =
+export const KECCAK256_RLP_S =
   '56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421'
 
 /**

@@ -1,3 +1,7 @@
+import {
+  Buffer,
+} from "../deps.js";
+
 function isHexString(value: string, length?: number): boolean {
   if (typeof(value) !== 'string' || !value.match(/^0x[0-9A-Fa-f]*$/)) {
     return false;

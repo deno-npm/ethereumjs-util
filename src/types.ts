@@ -1,7 +1,8 @@
 import {
-  BN
+  BN,
+  Buffer,
 } from '../deps.js';
-import { unpadBuffer } from './bytes.js'
+import { unpadBuffer } from './bytes.ts';
 
 /*
  * A type that represents a BNLike input that can be converted to a BN.

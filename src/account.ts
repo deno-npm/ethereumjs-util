@@ -1,5 +1,6 @@
 import {
   BN,
+  Buffer,
   cryptography,
   rlp,
 } from "../deps.js";
@@ -228,7 +229,7 @@ export const isValidPrivate = function(privateKey: Buffer): boolean {
  * @param publicKey The two points of an uncompressed key, unless sanitize is enabled
  * @param sanitize Accept public keys in other formats
  */
-export const isValidPublic = function(publicKey: Buffer, sanitize: boolean = false): boolean {
+export const isValidPublic = function(publicKey: Buffer, sanitize = false): boolean {
   assertIsBuffer(publicKey)
   if (publicKey.length === 64) {
     // Convert to SEC1 for secp256k1
@@ -248,7 +249,7 @@ export const isValidPublic = function(publicKey: Buffer, sanitize: boolean = fal
  * @param pubKey The two points of an uncompressed key, unless sanitize is enabled
  * @param sanitize Accept public keys in other formats
  */
-export const pubToAddress = function(pubKey: Buffer, sanitize: boolean = false): Buffer {
+export const pubToAddress = function(pubKey: Buffer, sanitize = false): Buffer {
   assertIsBuffer(pubKey)
   if (sanitize && pubKey.length !== 64) {
     pubKey = Buffer.from(publicKeyConvert(pubKey, false).slice(1))

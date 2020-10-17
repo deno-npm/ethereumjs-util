@@ -1,10 +1,11 @@
 import {
   BN,
+  Buffer,
   cryptography,
 } from '../deps.js';
-import { toBuffer, setLengthLeft, bufferToHex } from './bytes.js';
-import { keccak } from './hash.js';
-import { assertIsBuffer } from './helpers.js';
+import { toBuffer, setLengthLeft, bufferToHex } from './bytes.ts';
+import { keccak } from './hash.ts';
+import { assertIsBuffer } from './helpers.ts';
 
 const { ecdsaSign, ecdsaRecover, publicKeyConvert } = cryptography;
 
@@ -101,7 +102,7 @@ export const isValidSignature = function(
   v: number,
   r: Buffer,
   s: Buffer,
-  homesteadOrLater: boolean = true,
+  homesteadOrLater = true,
   chainId?: number,
 ): boolean {
   const SECP256K1_N_DIV_2 = new BN(

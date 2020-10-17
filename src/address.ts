@@ -1,4 +1,7 @@
-import {BN} from "../deps.js"
+import {
+  BN,
+  Buffer,
+} from "../deps.js"
 import { toBuffer, zeros } from './bytes.ts'
 import {
   isValidAddress,

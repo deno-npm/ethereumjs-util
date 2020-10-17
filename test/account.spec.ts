@@ -1,404 +1,327 @@
-import * as assert from 'assert'
-import * as BN from 'bn.js'
-import * as rlp from 'rlp'
 import {
   Account,
-  isValidPrivate,
-  isValidPublic,
-  importPublic,
-  publicToAddress,
-  privateToAddress,
-  privateToPublic,
+  BN,
   generateAddress,
   generateAddress2,
-  toBuffer,
-  isValidChecksumAddress,
+  importPublic,
   isValidAddress,
+  isValidChecksumAddress,
+  isValidPrivate,
+  isValidPublic,
+  privateToAddress,
+  privateToPublic,
+  publicToAddress,
+  rlp,
+  toBuffer,
   toChecksumAddress,
-} from '../src'
-const eip1014Testdata = require('./testdata/eip1014Examples.json')
+} from '../mod.ts';
+import {
+  Buffer,
+} from "../deps.js"
+import {
+  assert,
+  assertEquals,
+  assertThrows,
+} from "./deps.js"
 
-describe('Account', function() {
-  describe('empty constructor', function() {
-    const account = new Account()
-    it('should have zero nonce', function() {
-      assert.ok(account.nonce.isZero())
-    })
-    it('should have zero balance', function() {
-      assert.ok(account.balance.isZero())
-    })
-    it('should have stateRoot equal to KECCAK256_RLP', function() {
-      assert.ok(
-        account.stateRoot.toString('hex'),
-        '56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
-      )
-    })
-    it('should have codeHash equal to KECCAK256_NULL', function() {
-      assert.equal(
-        account.codeHash.toString('hex'),
-        'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
-      )
-    })
-  })
+const eip1014Testdata = await Deno.readTextFile(
+  new URL('./testdata/eip1014Examples.json', import.meta.url)
+)
+  .then(JSON.parse);
 
-  describe('from Array data', function() {
-    const raw = [
-      '0x02', // nonce
-      '0x0384', // balance
-      '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421', // stateRoot
-      '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470', // codeHash
-    ]
-    const account = Account.fromValuesArray(raw.map(toBuffer))
-    it('should have correct nonce', function() {
-      assert.ok(account.nonce.eqn(2))
-    })
-    it('should have correct balance', function() {
-      assert.ok(account.balance.eqn(900))
-    })
-    it('should have correct stateRoot', function() {
-      assert.equal(
-        account.stateRoot.toString('hex'),
-        '56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
-      )
-    })
-    it('should have correct codeHash', function() {
-      assert.equal(
-        account.codeHash.toString('hex'),
-        'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
-      )
-    })
-  })
+Deno.test("Account from empty", () => {
+  const account = new Account()
+  assert(account.nonce.isZero())
+  assert(account.balance.isZero())
+  // stateRoot equals KECCAK256_RLP
+  assertEquals(
+    account.stateRoot.toString('hex'),
+    '56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
+  )
+  // codeHash equals to KECCAK256_NULL
+  assertEquals(
+    account.codeHash.toString('hex'),
+    'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
+  )
+});
 
-  describe('from Object data', function() {
-    const raw = {
-      nonce: '0x02',
-      balance: '0x0384',
-      stateRoot: '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
-      codeHash: '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
-    }
-    const account = Account.fromAccountData(raw)
-    it('should have correct nonce', function() {
-      assert.ok(account.nonce.eqn(2))
-    })
-    it('should have correct balance', function() {
-      assert.ok(account.balance.eqn(900))
-    })
-    it('should have correct stateRoot', function() {
-      assert.equal(
-        account.stateRoot.toString('hex'),
-        '56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
-      )
-    })
-    it('should have correct codeHash', function() {
-      assert.equal(
-        account.codeHash.toString('hex'),
-        'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
-      )
-    })
-  })
+Deno.test('Account from array', function() {
+  const raw = [
+    '0x02', // nonce
+    '0x0384', // balance
+    '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421', // stateRoot
+    '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470', // codeHash
+  ]
+  const account = Account.fromValuesArray(raw.map(toBuffer))
+    assert(account.nonce.eqn(2))
+    assert(account.balance.eqn(900))
+    assertEquals(
+      account.stateRoot.toString('hex'),
+      '56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
+    )
+    assertEquals(
+      account.codeHash.toString('hex'),
+      'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
+    )
+})
 
-  describe('from RLP data', function() {
+Deno.test("Account from object", () => {
+  const raw = {
+    nonce: '0x02',
+    balance: '0x0384',
+    stateRoot: '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
+    codeHash: '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
+  }
+  const account = Account.fromAccountData(raw)
+    assert(account.nonce.eqn(2))
+    assert(account.balance.eqn(900))
+    assertEquals(
+      account.stateRoot.toString('hex'),
+      '56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
+    )
+    assertEquals(
+      account.codeHash.toString('hex'),
+      'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
+    )
+})
+
+Deno.test('Account from RLP', function() {
+  const accountRlp = Buffer.from(
+    'f84602820384a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a0c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
+    'hex',
+  )
+  const account = Account.fromRlpSerializedAccount(accountRlp)
+    assert(account.nonce.eqn(2))
+    assert(account.balance.eqn(900))
+    assertEquals(
+      account.stateRoot.toString('hex'),
+      '56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
+    )
+    assertEquals(
+      account.codeHash.toString('hex'),
+      'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
+    )
+})
+
+Deno.test('Account serializes correctly', function() {
+  const raw = {
+    nonce: '0x01',
+    balance: '0x42',
+    stateRoot: '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
+    codeHash: '0xc5d2461236f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
+  }
+  const account = Account.fromAccountData(raw)
+  const accountRlp = rlp.encode([raw.nonce, raw.balance, raw.stateRoot, raw.codeHash])
+    assert(account.serialize().equals(accountRlp))
+})
+
+Deno.test('Account isContract', function() {
     const accountRlp = Buffer.from(
       'f84602820384a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a0c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
       'hex',
     )
-    const account = Account.fromRlpSerializedAccount(accountRlp)
-    it('should have correct nonce', function() {
-      assert.ok(account.nonce.eqn(2))
-    })
-    it('should have correct balance', function() {
-      assert.ok(account.balance.eqn(900))
-    })
-    it('should have correct stateRoot', function() {
-      assert.equal(
-        account.stateRoot.toString('hex'),
-        '56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
-      )
-    })
-    it('should have correct codeHash', function() {
-      assert.equal(
-        account.codeHash.toString('hex'),
-        'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
-      )
-    })
-  })
+    const account_1 = Account.fromRlpSerializedAccount(accountRlp)
+    assertEquals(account_1.isContract(), false)
 
-  describe('serialize', function() {
     const raw = {
       nonce: '0x01',
-      balance: '0x42',
+      balance: '0x0042',
       stateRoot: '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
       codeHash: '0xc5d2461236f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
     }
-    const account = Account.fromAccountData(raw)
-    const accountRlp = rlp.encode([raw.nonce, raw.balance, raw.stateRoot, raw.codeHash])
-    it('should serialize correctly', function() {
-      assert.ok(account.serialize().equals(accountRlp))
-    })
-  })
-
-  describe('isContract', function() {
-    it('should return false for a non-contract account', function() {
-      const accountRlp = Buffer.from(
-        'f84602820384a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a0c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
-        'hex',
-      )
-      const account = Account.fromRlpSerializedAccount(accountRlp)
-      assert.equal(account.isContract(), false)
-    })
-
-    it('should return true for a contract account', function() {
-      const raw = {
-        nonce: '0x01',
-        balance: '0x0042',
-        stateRoot: '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
-        codeHash: '0xc5d2461236f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
-      }
-      const account = Account.fromAccountData(raw)
-      assert.ok(account.isContract())
-    })
-  })
-
-  describe('isEmpty', function() {
-    it('should return true for an empty account', function() {
-      const account = new Account()
-      assert.ok(account.isEmpty())
-    })
-
-    it('should return false for a non-empty account', function() {
-      const raw = {
-        nonce: '0x01',
-        balance: '0x0042',
-        stateRoot: '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
-        codeHash: '0xd748bf26ab37599c944babfdbeecf6690801bd61bf2670efb0a34adfc6dca10b',
-      }
-      const account = Account.fromAccountData(raw)
-      assert.equal(account.isEmpty(), false)
-    })
-  })
-
-  describe('validation', function() {
-    it('should only accept length 32 buffer for stateRoot', function() {
-      assert.throws(() => {
-        new Account(undefined, undefined, Buffer.from('hey'), undefined)
-      })
-    })
-
-    it('should only accept length 32 buffer for codeHash', function() {
-      assert.throws(() => {
-        new Account(undefined, undefined, undefined, Buffer.from('hey'))
-      })
-    })
-
-    it('should only accept an array in fromRlpSerializedAccount', function() {
-      const data = { balance: new BN(5) }
-      assert.throws(() => {
-        Account.fromRlpSerializedAccount(data as any)
-      })
-    })
-
-    it('should not accept nonce less than 0', function() {
-      assert.throws(() => {
-        new Account(new BN(-5))
-      })
-    })
-
-    it('should not accept balance less than 0', function() {
-      assert.throws(() => {
-        new Account(undefined, new BN(-5))
-      })
-    })
-  })
+    const account_2 = Account.fromAccountData(raw)
+    assert(account_2.isContract())
 })
 
-describe('isValidPrivate', function() {
-  const SECP256K1_N = new BN('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141', 16)
-  it('should fail on short input', function() {
+Deno.test('Account isEmpty', function() {
+    const account_1 = new Account()
+    assert(account_1.isEmpty())
+
+    const raw = {
+      nonce: '0x01',
+      balance: '0x0042',
+      stateRoot: '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
+      codeHash: '0xd748bf26ab37599c944babfdbeecf6690801bd61bf2670efb0a34adfc6dca10b',
+    }
+    const account_2 = Account.fromAccountData(raw)
+    assertEquals(account_2.isEmpty(), false)
+})
+
+Deno.test("Account throws on invalid data", () => {
+    // only accept length 32 buffer for stateRoot
+    assertThrows(() => {
+      new Account(undefined, undefined, Buffer.from('hey'), undefined)
+    })
+
+    // only accept length 32 buffer for codeHash
+    assertThrows(() => {
+      new Account(undefined, undefined, undefined, Buffer.from('hey'))
+    })
+
+    // only accept nonce more than 0
+    assertThrows(() => {
+      new Account(new BN(-5))
+    })
+
+    // only accept balance more than 0
+    assertThrows(() => {
+      new Account(undefined, new BN(-5))
+    })
+})
+
+const SECP256K1_N = new BN('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141', 16)
+  Deno.test('isValidPrivate should fail on short input', function() {
     const tmp = '0011223344'
-    assert.throws(function() {
+    assertThrows(function() {
       isValidPrivate(Buffer.from(tmp, 'hex'))
     })
   })
-  it('should fail on too big input', function() {
+  Deno.test('isValidPrivate should fail on too big input', function() {
     const tmp =
       '3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d'
-    assert.throws(function() {
+    assertThrows(function() {
       isValidPrivate(Buffer.from(tmp, 'hex'))
     })
   })
-  it('should fail on wrong input type', function() {
-    assert.throws(function() {
-      isValidPrivate((<unknown>'WRONG_INPUT_TYPE') as Buffer)
-    })
-  })
-  it('should fail on invalid curve (zero)', function() {
+  Deno.test('isValidPrivate should fail on invalid curve (zero)', function() {
     const tmp = '0000000000000000000000000000000000000000000000000000000000000000'
-    assert.equal(isValidPrivate(Buffer.from(tmp, 'hex')), false)
+    assertEquals(isValidPrivate(Buffer.from(tmp, 'hex')), false)
   })
-  it('should fail on invalid curve (== N)', function() {
+  Deno.test('isValidPrivate should fail on invalid curve (== N)', function() {
     const tmp = SECP256K1_N.toString(16)
-    assert.equal(isValidPrivate(Buffer.from(tmp, 'hex')), false)
+    assertEquals(isValidPrivate(Buffer.from(tmp, 'hex')), false)
   })
-  it('should fail on invalid curve (>= N)', function() {
+  Deno.test('isValidPrivate should fail on invalid curve (>= N)', function() {
     const tmp = SECP256K1_N.addn(1).toString(16)
-    assert.equal(isValidPrivate(Buffer.from(tmp, 'hex')), false)
+    assertEquals(isValidPrivate(Buffer.from(tmp, 'hex')), false)
   })
-  it('should work otherwise (< N)', function() {
+  Deno.test('isValidPrivate should work otherwise (< N)', function() {
     const tmp = SECP256K1_N.subn(1).toString(16)
-    assert.equal(isValidPrivate(Buffer.from(tmp, 'hex')), true)
+    assertEquals(isValidPrivate(Buffer.from(tmp, 'hex')), true)
   })
-})
 
-describe('isValidPublic', function() {
-  it('should fail on too short input', function() {
+  Deno.test('isValidPublic should fail on too short input', function() {
     const pubKey = Buffer.from(
       '3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae744',
       'hex',
     )
-    assert.equal(isValidPublic(pubKey), false)
+    assertEquals(isValidPublic(pubKey), false)
   })
-  it('should fail on too big input', function() {
+  Deno.test('isValidPublic should fail on too big input', function() {
     const pubKey = Buffer.from(
       '3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d00',
       'hex',
     )
-    assert.equal(isValidPublic(pubKey), false)
+    assertEquals(isValidPublic(pubKey), false)
   })
-  it('should fail on SEC1 key', function() {
+  Deno.test('isValidPublic should fail on SEC1 key', function() {
     const pubKey = Buffer.from(
       '043a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d',
       'hex',
     )
-    assert.equal(isValidPublic(pubKey), false)
+    assertEquals(isValidPublic(pubKey), false)
   })
-  it("shouldn't fail on SEC1 key with sanitize enabled", function() {
+  Deno.test("shouldn't fail on SEC1 key with sanitize enabled", function() {
     const pubKey = Buffer.from(
       '043a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d',
       'hex',
     )
-    assert.equal(isValidPublic(pubKey, true), true)
+    assertEquals(isValidPublic(pubKey, true), true)
   })
-  it('should fail with an invalid SEC1 public key', function() {
+  Deno.test('isValidPublic should fail with an invalid SEC1 public key', function() {
     const pubKey = Buffer.from(
       '023a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d',
       'hex',
     )
-    assert.equal(isValidPublic(pubKey, true), false)
+    assertEquals(isValidPublic(pubKey, true), false)
   })
-  it('should work with compressed keys with sanitize enabled', function() {
+  Deno.test('isValidPublic should work with compressed keys with sanitize enabled', function() {
     const pubKey = Buffer.from(
       '033a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a',
       'hex',
     )
-    assert.equal(isValidPublic(pubKey, true), true)
+    assertEquals(isValidPublic(pubKey, true), true)
   })
-  it('should work with sanitize enabled', function() {
+  Deno.test('isValidPublic should work with sanitize enabled', function() {
     const pubKey = Buffer.from(
       '043a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d',
       'hex',
     )
-    assert.equal(isValidPublic(pubKey, true), true)
+    assertEquals(isValidPublic(pubKey, true), true)
   })
-  it('should work otherwise', function() {
+  Deno.test('isValidPublic should work otherwise', function() {
     const pubKey = Buffer.from(
       '3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d',
       'hex',
     )
-    assert.equal(isValidPublic(pubKey), true)
+    assertEquals(isValidPublic(pubKey), true)
   })
-  it('should throw if input is not Buffer', function() {
-    const pubKey =
-      '3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d'
-    try {
-      isValidPublic((<unknown>pubKey) as Buffer)
-    } catch (err) {
-      assert(err.message.includes('This method only supports Buffer'))
-    }
-  })
-})
 
-describe('importPublic', function() {
   const pubKey =
     '3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d'
-  it('should work with an Ethereum public key', function() {
+  Deno.test('importPublic should work with an Ethereum public key', function() {
     const tmp =
       '3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d'
-    assert.equal(importPublic(Buffer.from(tmp, 'hex')).toString('hex'), pubKey)
+    assertEquals(importPublic(Buffer.from(tmp, 'hex')).toString('hex'), pubKey)
   })
-  it('should work with uncompressed SEC1 keys', function() {
+  Deno.test('importPublic should work with uncompressed SEC1 keys', function() {
     const tmp =
       '043a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d'
-    assert.equal(importPublic(Buffer.from(tmp, 'hex')).toString('hex'), pubKey)
+    assertEquals(importPublic(Buffer.from(tmp, 'hex')).toString('hex'), pubKey)
   })
-  it('should work with compressed SEC1 keys', function() {
+  Deno.test('importPublic should work with compressed SEC1 keys', function() {
     const tmp = '033a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a'
-    assert.equal(importPublic(Buffer.from(tmp, 'hex')).toString('hex'), pubKey)
+    assertEquals(importPublic(Buffer.from(tmp, 'hex')).toString('hex'), pubKey)
   })
-  it('should throw if input is not Buffer', function() {
-    assert.throws(function() {
-      importPublic((<unknown>pubKey) as Buffer)
-    })
-  })
-})
 
-describe('publicToAddress', function() {
-  it('should produce an address given a public key', function() {
+  Deno.test('publicToAddress should produce an address given a public key', function() {
     const pubKey = Buffer.from(
       '3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d',
       'hex',
     )
     const address = '2f015c60e0be116b1f0cd534704db9c92118fb6a'
     const r = publicToAddress(pubKey)
-    assert.equal(r.toString('hex'), address)
+    assertEquals(r.toString('hex'), address)
   })
-  it('should produce an address given a SEC1 public key', function() {
+  Deno.test('publicToAddress should produce an address given a SEC1 public key', function() {
     const pubKey = Buffer.from(
       '043a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d',
       'hex',
     )
     const address = '2f015c60e0be116b1f0cd534704db9c92118fb6a'
     const r = publicToAddress(pubKey, true)
-    assert.equal(r.toString('hex'), address)
+    assertEquals(r.toString('hex'), address)
   })
-  it("shouldn't produce an address given an invalid SEC1 public key", function() {
+  Deno.test("publicToAddress shouldn't produce an address given an invalid SEC1 public key", function() {
     const pubKey = Buffer.from(
       '023a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d',
       'hex',
     )
-    assert.throws(function() {
+    assertThrows(function() {
       publicToAddress(pubKey, true)
     })
   })
-  it("shouldn't produce an address given an invalid public key", function() {
+  Deno.test("publicToAddress shouldn't produce an address given an invalid public key", function() {
     const pubKey = Buffer.from(
       '3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae744',
       'hex',
     )
-    assert.throws(function() {
+    assertThrows(function() {
       publicToAddress(pubKey)
     })
   })
-  it('should throw if input is not a buffer', function() {
-    const pubKey: any =
-      '0x3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d'
-    assert.throws(function() {
-      publicToAddress(pubKey)
-    })
-  })
-})
 
-describe('privateToPublic', function() {
-  it('should produce a public key given a private key', function() {
+  Deno.test('privateToPublic should produce a public key given a private key', function() {
     const pubKey =
       '3a443d8381a6798a70c6ff9304bdc8cb0163c23211d11628fae52ef9e0dca11a001cf066d56a8156fc201cd5df8a36ef694eecd258903fca7086c1fae7441e1d'
     const privateKey = Buffer.from(
       'ea54bdc52d163f88c93ab0615782cf718a2efb9e51a7989aab1b08067e9c1c5f',
       'hex',
     )
-    const r: any = privateToPublic(privateKey).toString('hex')
-    assert.equal(r.toString('hex'), pubKey)
+    const r = privateToPublic(privateKey).toString('hex')
+    assertEquals(r, pubKey)
   })
-  it("shouldn't produce a public key given an invalid private key", function() {
+  Deno.test("privateToPublic shouldn't produce a public key given an invalid private key", function() {
     const privateKey1 = Buffer.from(
       'ea54bdc52d163f88c93ab0615782cf718a2efb9e51a7989aab1b08067e9c1c5f2a',
       'hex',
@@ -407,132 +330,60 @@ describe('privateToPublic', function() {
       'ea54bdc52d163f88c93ab0615782cf718a2efb9e51a7989aab1b08067e9c1c',
       'hex',
     )
-    assert.throws(function() {
+    assertThrows(function() {
       privateToPublic(privateKey1)
     })
-    assert.throws(function() {
+    assertThrows(function() {
       privateToPublic(privateKey2)
     })
   })
 
-  it('should throw if private key is not Buffer', function() {
-    const privateKey = '0xea54bdc52d163f88c93ab0615782cf718a2efb9e51a7989aab1b08067e9c1c5f'
-    try {
-      privateToPublic((<unknown>privateKey) as Buffer)
-    } catch (err) {
-      assert(err.message.includes('This method only supports Buffer'))
-      assert(err.message.includes(privateKey))
-    }
-  })
-})
-
-describe('privateToAddress', function() {
-  it('should produce an address given a private key', function() {
+  Deno.test('privateToAddress should produce an address given a private key', function() {
     const address = '2f015c60e0be116b1f0cd534704db9c92118fb6a'
     // Our private key
     const privateKey = Buffer.from(
       'ea54bdc52d163f88c93ab0615782cf718a2efb9e51a7989aab1b08067e9c1c5f',
       'hex',
     )
-    const r: any = privateToAddress(privateKey).toString('hex')
-    assert.equal(r.toString('hex'), address)
+    const r = privateToAddress(privateKey).toString('hex')
+    assertEquals(r, address)
   })
-})
 
-describe('generateAddress', function() {
-  it('should produce an address given a public key', function() {
-    const add: any = generateAddress(
+  Deno.test('generateAddress should produce an address given a public key', function() {
+    const add = generateAddress(
       Buffer.from('990ccf8a0de58091c028d6ff76bb235ee67c1c39', 'utf8'),
       toBuffer(14),
     ).toString('hex')
-    assert.equal(add.toString('hex'), '936a4295d8d74e310c0c95f0a63e53737b998d12')
+    assertEquals(add, '936a4295d8d74e310c0c95f0a63e53737b998d12')
   })
-})
 
-describe('generateAddress with hex prefix', function() {
-  it('should produce an address given a public key', function() {
-    const add: any = generateAddress(
+  Deno.test('generateAddress hex should produce an address given a public key', function() {
+    const add = generateAddress(
       toBuffer('0x990ccf8a0de58091c028d6ff76bb235ee67c1c39'),
       toBuffer(14),
     ).toString('hex')
-    assert.equal(add.toString('hex'), 'd658a4b8247c14868f3c512fa5cbb6e458e4a989')
+    assertEquals(add, 'd658a4b8247c14868f3c512fa5cbb6e458e4a989')
   })
-})
 
-describe('generateAddress with nonce 0 (special case)', function() {
-  it('should produce an address given a public key', function() {
-    const add: any = generateAddress(
+  Deno.test('generateAddress nonce 0 should produce an address given a public key', function() {
+    const add = generateAddress(
       toBuffer('0x990ccf8a0de58091c028d6ff76bb235ee67c1c39'),
       toBuffer(0),
     ).toString('hex')
-    assert.equal(add.toString('hex'), 'bfa69ba91385206bfdd2d8b9c1a5d6c10097a85b')
+    assertEquals(add, 'bfa69ba91385206bfdd2d8b9c1a5d6c10097a85b')
   })
-})
 
-describe('generateAddress with non-buffer inputs', function() {
-  it('should throw if address is not Buffer', function() {
-    assert.throws(function() {
-      generateAddress(
-        (<unknown>'0x990ccf8a0de58091c028d6ff76bb235ee67c1c39') as Buffer,
-        toBuffer(0),
-      )
-    })
+for (let i = 0; i <= 6; i++) {
+  const e = eip1014Testdata[i]
+  Deno.test(`generateAddress2 ${e['comment']}: generates the correct address`, function() {
+    const result = generateAddress2(
+      toBuffer(e['address']),
+      toBuffer(e['salt']),
+      toBuffer(e['initCode']),
+    )
+    assertEquals('0x' + result.toString('hex'), e['result'])
   })
-  it('should throw if nonce is not Buffer', function() {
-    assert.throws(function() {
-      generateAddress(
-        toBuffer('0x990ccf8a0de58091c028d6ff76bb235ee67c1c39'),
-        (<unknown>0) as Buffer,
-      )
-    })
-  })
-})
-
-describe('generateAddress2: EIP-1014 testdata examples', function() {
-  for (let i = 0; i <= 6; i++) {
-    let e = eip1014Testdata[i]
-    it(`${e['comment']}: should generate the addresses provided`, function() {
-      let result = generateAddress2(
-        toBuffer(e['address']),
-        toBuffer(e['salt']),
-        toBuffer(e['initCode']),
-      )
-      assert.equal('0x' + result.toString('hex'), e['result'])
-    })
-  }
-})
-
-describe('generateAddress2: non-buffer inputs', function() {
-  const e = eip1014Testdata[0]
-
-  it('should throw if address is not Buffer', function() {
-    assert.throws(function() {
-      generateAddress2(
-        (<unknown>e['address']) as Buffer,
-        toBuffer(e['salt']),
-        toBuffer(e['initCode']),
-      )
-    })
-  })
-  it('should throw if salt is not Buffer', function() {
-    assert.throws(function() {
-      generateAddress2(
-        toBuffer(e['address']),
-        (<unknown>e['salt']) as Buffer,
-        toBuffer(e['initCode']),
-      )
-    })
-  })
-  it('should throw if initCode is not Buffer', function() {
-    assert.throws(function() {
-      generateAddress2(
-        toBuffer(e['address']),
-        toBuffer(e['salt']),
-        (<unknown>e['initCode']) as Buffer,
-      )
-    })
-  })
-})
+}
 
 const eip55ChecksumAddresses = [
   // All caps
@@ -587,110 +438,78 @@ const eip1191ChecksummAddresses = {
   ],
 }
 
-describe('.toChecksumAddress()', function() {
-  describe('EIP55', function() {
-    it('should work', function() {
-      for (let i = 0; i < eip55ChecksumAddresses.length; i++) {
-        let tmp = eip55ChecksumAddresses[i]
-        assert.equal(toChecksumAddress(tmp.toLowerCase()), tmp)
-      }
-    })
-  })
-
-  describe('EIP1191', function() {
-    it('Should encode the example addresses correctly', function() {
-      for (const [chainId, addresses] of Object.entries(eip1191ChecksummAddresses)) {
-        for (const addr of addresses) {
-          assert.equal(toChecksumAddress(addr.toLowerCase(), Number(chainId)), addr)
-        }
-      }
-    })
-  })
-
-  describe('input format', function() {
-    it('Should throw when the address is not hex-prefixed', function() {
-      assert.throws(function() {
-        toChecksumAddress('52908400098527886E0F7030069857D2E4169EE7'.toLowerCase())
-      })
-    })
-  })
+Deno.test('toChecksumAddress EIP55', function() {
+  for (let i = 0; i < eip55ChecksumAddresses.length; i++) {
+    const tmp = eip55ChecksumAddresses[i]
+    assertEquals(toChecksumAddress(tmp.toLowerCase()), tmp)
+  }
 })
 
-describe('.isValidChecksumAddress()', function() {
-  describe('EIP55', function() {
-    it('should return true', function() {
-      for (let i = 0; i < eip55ChecksumAddresses.length; i++) {
-        assert.equal(isValidChecksumAddress(eip55ChecksumAddresses[i]), true)
-      }
-    })
-    it('should validate', function() {
-      assert.equal(isValidChecksumAddress('0x2f015c60e0be116b1f0cd534704db9c92118fb6a'), false)
-    })
-  })
-
-  describe('EIP1191', function() {
-    it('Should return true for the example addresses', function() {
-      for (const [chainId, addresses] of Object.entries(eip1191ChecksummAddresses)) {
-        for (const addr of addresses) {
-          assert.equal(isValidChecksumAddress(addr, Number(chainId)), true)
-        }
-      }
-    })
-
-    it('Should return false for invalid cases', function() {
-      // If we set the chain id, an EIP55 encoded address should be invalid
-      for (let i = 0; i < eip55ChecksumAddresses.length; i++) {
-        assert.equal(isValidChecksumAddress(eip55ChecksumAddresses[i], 1), false)
-      }
-
-      assert.equal(isValidChecksumAddress('0x2f015c60e0be116b1f0cd534704db9c92118fb6a', 1), false)
-    })
-
-    it('Should return false if the wrong chain id is used', function() {
-      for (const [chainId, addresses] of Object.entries(eip1191ChecksummAddresses)) {
-        for (const addr of addresses) {
-          assert.equal(isValidChecksumAddress(addr, Number(chainId) + 1), false)
-        }
-      }
-    })
-  })
-
-  describe('input format', function() {
-    it('Should throw when the address is not hex-prefixed', function() {
-      assert.throws(function() {
-        isValidChecksumAddress('2f015c60e0be116b1f0cd534704db9c92118fb6a')
-      })
-    })
-  })
-})
-
-describe('.isValidAddress()', function() {
-  it('should return true', function() {
-    assert.equal(isValidAddress('0x2f015c60e0be116b1f0cd534704db9c92118fb6a'), true)
-    assert.equal(isValidAddress('0x52908400098527886E0F7030069857D2E4169EE7'), true)
-  })
-  it('should return false', function() {
-    assert.equal(isValidAddress('0x2f015c60e0be116b1f0cd534704db9c92118fb6'), false)
-    assert.equal(isValidAddress('0x2f015c60e0be116b1f0cd534704db9c92118fb6aa'), false)
-  })
-  it('should throw when input is not hex prefixed', function() {
-    assert.throws(function() {
-      isValidAddress('2f015c60e0be116b1f0cd534704db9c92118fb6a')
-    })
-    assert.throws(function() {
-      isValidAddress('x2f015c60e0be116b1f0cd534704db9c92118fb6a')
-    })
-    assert.throws(function() {
-      isValidAddress('0X52908400098527886E0F7030069857D2E4169EE7')
-    })
-  })
-  it('error message should have correct format', function() {
-    const input = '2f015c60e0be116b1f0cd534704db9c92118fb6a'
-    try {
-      isValidAddress('2f015c60e0be116b1f0cd534704db9c92118fb6a')
-    } catch (err) {
-      assert(err.message.includes('only supports 0x-prefixed hex strings'))
-      assert(err.message.includes(input))
+Deno.test('toChecksumAddress EIP1191', function() {
+  for (const [chainId, addresses] of Object.entries(eip1191ChecksummAddresses)) {
+    for (const addr of addresses) {
+      assertEquals(toChecksumAddress(addr.toLowerCase(), Number(chainId)), addr)
     }
+  }
+})
+
+Deno.test('toChecksumAddress throws when the address is not hex-prefixed', function() {
+  assertThrows(function() {
+    toChecksumAddress('52908400098527886E0F7030069857D2E4169EE7'.toLowerCase())
+  })
+})
+
+Deno.test('isValidChecksumAddress EIP55', function() {
+  for (let i = 0; i < eip55ChecksumAddresses.length; i++) {
+    assertEquals(isValidChecksumAddress(eip55ChecksumAddresses[i]), true)
+  }
+  assertEquals(isValidChecksumAddress('0x2f015c60e0be116b1f0cd534704db9c92118fb6a'), false)
+})
+
+Deno.test('isValidChecksumAddress EIP1191', function() {
+  for (const [chainId, addresses] of Object.entries(eip1191ChecksummAddresses)) {
+    for (const addr of addresses) {
+      assertEquals(isValidChecksumAddress(addr, Number(chainId)), true)
+    }
+  }
+
+  // If we set the chain id, an EIP55 encoded address should be invalid
+  for (let i = 0; i < eip55ChecksumAddresses.length; i++) {
+    assertEquals(isValidChecksumAddress(eip55ChecksumAddresses[i], 1), false)
+  }
+
+  assertEquals(isValidChecksumAddress('0x2f015c60e0be116b1f0cd534704db9c92118fb6a', 1), false)
+
+  //Should return false cause wrong chain id is used
+  for (const [chainId, addresses] of Object.entries(eip1191ChecksummAddresses)) {
+    for (const addr of addresses) {
+      assertEquals(isValidChecksumAddress(addr, Number(chainId) + 1), false)
+    }
+  }
+})
+
+Deno.test('isValidChecksumAddress throws when the address is not hex-prefixed', function() {
+  assertThrows(function() {
+    isValidChecksumAddress('2f015c60e0be116b1f0cd534704db9c92118fb6a')
+  })
+})
+
+Deno.test('isValidAddress', function() {
+  assertEquals(isValidAddress('0x2f015c60e0be116b1f0cd534704db9c92118fb6a'), true)
+  assertEquals(isValidAddress('0x52908400098527886E0F7030069857D2E4169EE7'), true)
+
+  assertEquals(isValidAddress('0x2f015c60e0be116b1f0cd534704db9c92118fb6'), false)
+  assertEquals(isValidAddress('0x2f015c60e0be116b1f0cd534704db9c92118fb6aa'), false)
+})
+
+Deno.test('isValidAddress throws when input is not hex prefixed', function() {
+  assertThrows(function() {
+    isValidAddress('2f015c60e0be116b1f0cd534704db9c92118fb6a')
+  })
+  assertThrows(function() {
+    isValidAddress('x2f015c60e0be116b1f0cd534704db9c92118fb6a')
+  })
+  assertThrows(function() {
+    isValidAddress('0X52908400098527886E0F7030069857D2E4169EE7')
   })
 })

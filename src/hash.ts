@@ -1,4 +1,6 @@
 import {
+  Buffer,
+  createHash,
   rlp,
 } from '../deps.js'
 import { toBuffer, setLengthLeft } from './bytes.ts'
@@ -9,7 +11,7 @@ import { assertIsString, assertIsBuffer, assertIsArray, assertIsHexString } from
  * @param a The input data (Buffer)
  * @param bits (number = 256) The Keccak width
  */
-export const keccak = function(a: Buffer, bits: number = 256): Buffer {
+export const keccak = function(a: Buffer, bits = 256): Buffer {
   assertIsBuffer(a)
   switch (bits) {
     case 224: {
@@ -63,7 +65,7 @@ export const keccak256 = function(a: Buffer): Buffer {
  * @param a The input data (String)
  * @param bits (number = 256) The Keccak width
  */
-export const keccakFromString = function(a: string, bits: number = 256) {
+export const keccakFromString = function(a: string, bits = 256) {
   assertIsString(a)
   const buf = Buffer.from(a, 'utf8')
   return keccak(buf, bits)
@@ -74,7 +76,7 @@ export const keccakFromString = function(a: string, bits: number = 256) {
  * @param a The input data (String)
  * @param bits (number = 256) The Keccak width
  */
-export const keccakFromHexString = function(a: string, bits: number = 256) {
+export const keccakFromHexString = function(a: string, bits = 256) {
   assertIsHexString(a)
   return keccak(toBuffer(a), bits)
 }
@@ -84,7 +86,7 @@ export const keccakFromHexString = function(a: string, bits: number = 256) {
  * @param a The input data (number[])
  * @param bits (number = 256) The Keccak width
  */
-export const keccakFromArray = function(a: number[], bits: number = 256) {
+export const keccakFromArray = function(a: number[], bits = 256) {
   assertIsArray(a)
   return keccak(toBuffer(a), bits)
 }
@@ -122,12 +124,9 @@ export const sha256FromArray = function(a: number[]): Buffer {
  */
 const _sha256 = function(a: any): Buffer {
   a = toBuffer(a)
-  // createHash('sha256')
-  //   .update(x)
-  //   .digest()
-  return createHash('sha256')
+  return Buffer.from(createHash('sha256')
     .update(a)
-    .digest()
+    .digest())
 }
 
 /**
@@ -167,12 +166,9 @@ export const ripemd160FromArray = function(a: number[], padded: boolean): Buffer
  */
 const _ripemd160 = function(a: any, padded: boolean): Buffer {
   a = toBuffer(a)
-    // createHash('ripemd160')
-  //   .update(x)
-  //   .digest()
-  const hash = createHash('rmd160')
+  const hash = Buffer.from(createHash('ripemd160')
     .update(a)
-    .digest()
+    .digest())
   if (padded === true) {
     return setLengthLeft(hash, 32)
   } else {
@@ -185,5 +181,8 @@ const _ripemd160 = function(a: any, padded: boolean): Buffer {
  * @param a The input data
  */
 export const rlphash = function(a: rlp.Input): Buffer {
-  return keccak(rlp.encode(a))
+  return keccak(
+    //Needs to be encoded again cause rlp Buffer != Deno buffer
+    Buffer.from(rlp.encode(a))
+  );
 }

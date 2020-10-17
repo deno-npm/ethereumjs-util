@@ -1,6 +1,9 @@
-import {BN} from '../deps.js'
-import { TransformableToArray, TransformableToBuffer } from './types.js'
-import { assertIsBuffer, assertIsArray, assertIsHexString } from './helpers.js'
+import {
+  BN,
+  Buffer,
+} from '../deps.js'
+import { TransformableToArray, TransformableToBuffer } from './types.ts'
+import { assertIsBuffer, assertIsArray, assertIsHexString } from './helpers.ts'
 
 function intToHex(i: number) {
   var hex = i.toString(16);

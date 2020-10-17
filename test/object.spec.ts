@@ -1,7 +1,12 @@
-import * as assert from 'assert'
-import { zeros, defineProperties } from '../src'
+import { zeros, defineProperties } from '../mod.ts'
+import {
+  Buffer
+} from "../deps.js";
+import {
+  assertEquals,
+  assertThrows,
+} from "./deps.js";
 
-describe('define', function() {
   const fields = [
     {
       name: 'aword',
@@ -32,22 +37,23 @@ describe('define', function() {
     },
   ]
 
-  it('should trim zeros', function() {
-    var someOb: any = {}
+  Deno.test('defineProperties should trim zeros', function() {
+    // deno-lint-ignore no-explicit-any
+    var someOb: {[key: string]: any} = {}
     defineProperties(someOb, fields)
     // Define Properties
     someOb.r = '0x00004'
-    assert.equal(someOb.r.toString('hex'), '04')
+    assertEquals(someOb.r.toString('hex'), '04')
 
     someOb.r = Buffer.from([0, 0, 0, 0, 4])
-    assert.equal(someOb.r.toString('hex'), '04')
+    assertEquals(someOb.r.toString('hex'), '04')
   })
 
-  it("shouldn't allow wrong size for exact size requirements", function() {
+  Deno.test("defineProperties shouldn't allow wrong size for exact size requirements", function() {
     var someOb = {}
     defineProperties(someOb, fields)
 
-    assert.throws(function() {
+    assertThrows(function() {
       const tmp = [
         {
           name: 'mustBeExactSize',
@@ -60,7 +66,8 @@ describe('define', function() {
     })
   })
 
-  it('it should accept rlp encoded intial data', function() {
+  Deno.test('defineProperties it should accept rlp encoded intial data', function() {
+    // deno-lint-ignore no-explicit-any
     var someOb: any = {}
     var data = {
       aword: '0x01',
@@ -80,12 +87,13 @@ describe('define', function() {
     var expectedArray = ['0x01', '0x', '0x02', '0x03', '0x04']
 
     defineProperties(someOb, fields, data)
-    assert.deepEqual(someOb.toJSON(true), expected, 'should produce the correctly labeled object')
+    assertEquals(someOb.toJSON(true), expected, 'should produce the correctly labeled object')
 
+    // deno-lint-ignore no-explicit-any
     var someOb2: any = {}
     var rlpEncoded = someOb.serialize().toString('hex')
     defineProperties(someOb2, fields, rlpEncoded)
-    assert.equal(
+    assertEquals(
       someOb2.serialize().toString('hex'),
       rlpEncoded,
       'the constuctor should accept rlp encoded buffers',
@@ -93,21 +101,22 @@ describe('define', function() {
 
     var someOb3 = {}
     defineProperties(someOb3, fields, expectedArray)
-    assert.deepEqual(someOb.toJSON(), expectedArray, 'should produce the correctly object')
+    assertEquals(someOb.toJSON(), expectedArray, 'should produce the correctly object')
   })
 
-  it('it should not accept invalid values in the constuctor', function() {
+  Deno.test('defineProperties it should not accept invalid values in the constuctor', function() {
     var someOb = {}
-    assert.throws(function() {
+    assertThrows(function() {
       defineProperties(someOb, fields, 5)
-    }, 'should throw on nonsensical data')
+    }, Error);
 
-    assert.throws(function() {
+    assertThrows(function() {
       defineProperties(someOb, fields, Array(6))
-    }, 'should throw on invalid arrays')
+    }, Error)
   })
 
-  it('alias should work ', function() {
+  Deno.test('defineProperties alias should work ', function() {
+    // deno-lint-ignore no-explicit-any
     var someOb: any = {}
     var data = {
       aword: '0x01',
@@ -117,18 +126,18 @@ describe('define', function() {
     }
 
     defineProperties(someOb, fields, data)
-    assert.equal(someOb.blah.toString('hex'), '01')
+    assertEquals(someOb.blah.toString('hex'), '01')
     someOb.blah = '0x09'
-    assert.equal(someOb.blah.toString('hex'), '09')
-    assert.equal(someOb.aword.toString('hex'), '09')
+    assertEquals(someOb.blah.toString('hex'), '09')
+    assertEquals(someOb.aword.toString('hex'), '09')
   })
 
-  it('alias should work #2', function() {
+  Deno.test('defineProperties alias should work #2', function() {
+    // deno-lint-ignore no-explicit-any
     var someOb: any = {}
     var data = { blah: '0x1' }
 
     defineProperties(someOb, fields, data)
-    assert.equal(someOb.blah.toString('hex'), '01')
-    assert.equal(someOb.aword.toString('hex'), '01')
+    assertEquals(someOb.blah.toString('hex'), '01')
+    assertEquals(someOb.aword.toString('hex'), '01')
   })
-})

@@ -1,7 +1,8 @@
 import {
+  Buffer,
   rlp,
 } from "../deps.js";
-import { toBuffer, baToJSON, unpadBuffer } from './bytes.js'
+import { toBuffer, baToJSON, unpadBuffer } from './bytes.ts'
 
 /**
  * Defines properties on a `Object`. It make the assumption that underlying data is binary.
