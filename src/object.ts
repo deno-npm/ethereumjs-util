@@ -1,8 +1,5 @@
-import {
-  Buffer,
-  rlp,
-} from "../deps.js";
-import { toBuffer, baToJSON, unpadBuffer } from './bytes.ts'
+import { Buffer, rlp } from "../deps.js";
+import { baToJSON, toBuffer, unpadBuffer } from "./bytes.ts";
 
 /**
  * Defines properties on a `Object`. It make the assumption that underlying data is binary.
@@ -15,51 +12,58 @@ import { toBuffer, baToJSON, unpadBuffer } from './bytes.ts'
  * @param data data to be validated against the definitions
  * @deprecated
  */
-export const defineProperties = function(self: any, fields: any, data?: any) {
-  self.raw = []
-  self._fields = []
+// deno-lint-ignore no-explicit-any
+export const defineProperties = function (self: any, fields: any, data?: any) {
+  self.raw = [];
+  self._fields = [];
 
   // attach the `toJSON`
-  self.toJSON = function(label: boolean = false) {
+  self.toJSON = function (label: boolean = false) {
     if (label) {
-      type Dict = { [key: string]: string }
-      const obj: Dict = {}
+      type Dict = { [key: string]: string };
+      const obj: Dict = {};
       self._fields.forEach((field: string) => {
-        obj[field] = `0x${self[field].toString('hex')}`
-      })
-      return obj
+        obj[field] = `0x${self[field].toString("hex")}`;
+      });
+      return obj;
     }
-    return baToJSON(self.raw)
-  }
+    return baToJSON(self.raw);
+  };
 
   self.serialize = function serialize() {
-    return rlp.encode(self.raw)
-  }
+    return rlp.encode(self.raw);
+  };
 
+  // deno-lint-ignore no-explicit-any
   fields.forEach((field: any, i: number) => {
-    self._fields.push(field.name)
+    self._fields.push(field.name);
     function getter() {
-      return self.raw[i]
+      return self.raw[i];
     }
+    // deno-lint-ignore no-explicit-any
     function setter(v: any) {
-      v = toBuffer(v)
+      v = toBuffer(v);
 
-      if (v.toString('hex') === '00' && !field.allowZero) {
-        v = Buffer.allocUnsafe(0)
+      if (v.toString("hex") === "00" && !field.allowZero) {
+        v = Buffer.allocUnsafe(0);
       }
 
       if (field.allowLess && field.length) {
-        v = unpadBuffer(v)
-        if(field.length < v.length){
-          throw new Error(`The field ${field.name} must not have more ${field.length} bytes`);
+        v = unpadBuffer(v);
+        if (field.length < v.length) {
+          throw new Error(
+            `The field ${field.name} must not have more ${field.length} bytes`,
+          );
         }
       } else if (!(field.allowZero && v.length === 0) && field.length) {
-        if(field.length !== v.length){
-          throw new Error(`The field ${field.name} must have byte length of ${field.length}`);
+        if (field.length !== v.length) {
+          throw new Error(
+            `The field ${field.name} must have byte length of ${field.length}`,
+          );
         }
       }
 
-      self.raw[i] = v
+      self.raw[i] = v;
     }
 
     Object.defineProperty(self, field.name, {
@@ -67,10 +71,10 @@ export const defineProperties = function(self: any, fields: any, data?: any) {
       configurable: true,
       get: getter,
       set: setter,
-    })
+    });
 
     if (field.default) {
-      self[field.name] = field.default
+      self[field.name] = field.default;
     }
 
     // attach alias
@@ -80,37 +84,42 @@ export const defineProperties = function(self: any, fields: any, data?: any) {
         configurable: true,
         set: setter,
         get: getter,
-      })
+      });
     }
-  })
+  });
 
   // if the constuctor is passed data
   if (data) {
-    if (typeof data === 'string') {
-      data = Buffer.from(data.replace(/^0x/, ''), 'hex')
+    if (typeof data === "string") {
+      data = Buffer.from(data.replace(/^0x/, ""), "hex");
     }
 
     if (Buffer.isBuffer(data)) {
-      data = rlp.decode(data)
+      data = rlp.decode(data);
     }
 
     if (Array.isArray(data)) {
       if (data.length > self._fields.length) {
-        throw new Error('wrong number of fields in data')
+        throw new Error("wrong number of fields in data");
       }
 
       // make sure all the items are buffers
       data.forEach((d, i) => {
-        self[self._fields[i]] = toBuffer(d)
-      })
-    } else if (typeof data === 'object') {
-      const keys = Object.keys(data)
+        self[self._fields[i]] = toBuffer(d);
+      });
+    } else if (typeof data === "object") {
+      const keys = Object.keys(data);
+      // deno-lint-ignore no-explicit-any
       fields.forEach((field: any) => {
-        if (keys.indexOf(field.name) !== -1) self[field.name] = data[field.name]
-        if (keys.indexOf(field.alias) !== -1) self[field.alias] = data[field.alias]
-      })
+        if (keys.indexOf(field.name) !== -1) {
+          self[field.name] = data[field.name];
+        }
+        if (keys.indexOf(field.alias) !== -1) {
+          self[field.alias] = data[field.alias];
+        }
+      });
     } else {
-      throw new Error('invalid data')
+      throw new Error("invalid data");
     }
   }
-}
+};

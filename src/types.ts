@@ -1,13 +1,10 @@
-import {
-  BN,
-  Buffer,
-} from '../deps.js';
-import { unpadBuffer } from './bytes.ts';
+import { BN, Buffer } from "../deps.js";
+import { unpadBuffer } from "./bytes.ts";
 
 /*
  * A type that represents a BNLike input that can be converted to a BN.
  */
-export type BNLike = BN | string | number
+export type BNLike = BN | string | number;
 
 /*
  * A type that represents a BufferLike input that can be converted to a Buffer.
@@ -19,27 +16,27 @@ export type BufferLike =
   | number
   | BN
   | TransformableToBuffer
-  | PrefixedHexString
+  | PrefixedHexString;
 
 /*
  * A type that represents a `0x`-prefixed hex string.
  */
-export type PrefixedHexString = string
+export type PrefixedHexString = string;
 
 /*
  * A type that represents an object that has a `toArray()` method.
  */
 export interface TransformableToArray {
-  toArray(): Uint8Array
-  toBuffer?(): Buffer
+  toArray(): Uint8Array;
+  toBuffer?(): Buffer;
 }
 
 /*
  * A type that represents an object that has a `toBuffer()` method.
  */
 export interface TransformableToBuffer {
-  toBuffer(): Buffer
-  toArray?(): Uint8Array
+  toBuffer(): Buffer;
+  toArray?(): Uint8Array;
 }
 
 /**
@@ -49,5 +46,5 @@ export interface TransformableToBuffer {
 export function bnToRlp(value: BN): Buffer {
   // Using `bn.toArrayLike(Buffer)` instead of `bn.toBuffer()`
   // for compatibility with browserify and similar tools
-  return unpadBuffer(value.toArrayLike(Buffer))
+  return unpadBuffer(value.toArrayLike(Buffer));
 }

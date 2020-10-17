@@ -1,56 +1,49 @@
-import {
-  BN,
-  rlp,
-  util,
-} from "./deps.js";
+import { BN, rlp, util } from "./deps.js";
 
 /**
  * Constants
  */
-export * from './src/constants.ts'
+export * from "./src/constants.ts";
 
 /**
  * Account class and helper functions
  */
-export * from './src/account.ts'
+export * from "./src/account.ts";
 
 /**
  * Address type
  */
-export * from './src/address.ts'
+export * from "./src/address.ts";
 
 /**
  * Hash functions
  */
-export * from './src/hash.ts'
+export * from "./src/hash.ts";
 
 /**
  * ECDSA signature
  */
-export * from './src/signature.ts'
+export * from "./src/signature.ts";
 
 /**
  * Utilities for manipulating Buffers, byte arrays, etc.
  */
-export * from './src/bytes.ts'
+export * from "./src/bytes.ts";
 
 /**
  * Function for definining properties on an object
  */
-export * from './src/object.ts'
+export * from "./src/object.ts";
 
 /**
  * External exports (BN, rlp)
  */
-export {
-  BN,
-  rlp,
-};
+export { BN, rlp };
 
 /**
  * Helpful TypeScript types
  */
-export * from './src/types.ts'
+export * from "./src/types.ts";
 
 const {
   arrayContainsArray,

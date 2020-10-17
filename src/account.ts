@@ -1,65 +1,60 @@
-import {
-  BN,
-  Buffer,
-  cryptography,
-  rlp,
-} from "../deps.js";
-import { KECCAK256_RLP, KECCAK256_NULL } from './constants.ts'
-import { zeros, bufferToHex, toBuffer } from './bytes.ts'
-import { keccak, keccak256, keccakFromString, rlphash } from './hash.ts'
-import { assertIsHexString, assertIsBuffer } from './helpers.ts'
-import { BNLike, BufferLike, bnToRlp } from './types.ts'
+import { BN, Buffer, cryptography, rlp } from "../deps.js";
+import { KECCAK256_NULL, KECCAK256_RLP } from "./constants.ts";
+import { bufferToHex, toBuffer, zeros } from "./bytes.ts";
+import { keccak, keccak256, keccakFromString, rlphash } from "./hash.ts";
+import { assertIsBuffer, assertIsHexString } from "./helpers.ts";
+import { BNLike, bnToRlp, BufferLike } from "./types.ts";
 
 const {
   privateKeyVerify,
   publicKeyCreate,
   publicKeyVerify,
   publicKeyConvert,
-} = cryptography
+} = cryptography;
 
 export interface AccountData {
-  nonce?: BNLike
-  balance?: BNLike
-  stateRoot?: BufferLike
-  codeHash?: BufferLike
+  nonce?: BNLike;
+  balance?: BNLike;
+  stateRoot?: BufferLike;
+  codeHash?: BufferLike;
 }
 
 export class Account {
-  nonce: BN
-  balance: BN
-  stateRoot: Buffer
-  codeHash: Buffer
+  nonce: BN;
+  balance: BN;
+  stateRoot: Buffer;
+  codeHash: Buffer;
 
   static fromAccountData(accountData: AccountData) {
-    const { nonce, balance, stateRoot, codeHash } = accountData
+    const { nonce, balance, stateRoot, codeHash } = accountData;
 
     return new Account(
       nonce ? new BN(toBuffer(nonce)) : undefined,
       balance ? new BN(toBuffer(balance)) : undefined,
       stateRoot ? toBuffer(stateRoot) : undefined,
       codeHash ? toBuffer(codeHash) : undefined,
-    )
+    );
   }
 
   public static fromRlpSerializedAccount(serialized: Buffer) {
-    const values = rlp.decode(serialized)
+    const values = rlp.decode(serialized);
 
     if (!Array.isArray(values)) {
-      throw new Error('Invalid serialized account input. Must be array')
+      throw new Error("Invalid serialized account input. Must be array");
     }
 
-    return this.fromValuesArray(values)
+    return this.fromValuesArray(values);
   }
 
   public static fromValuesArray(values: Buffer[]) {
-    const [nonce, balance, stateRoot, codeHash] = values
+    const [nonce, balance, stateRoot, codeHash] = values;
 
     return new Account(
       nonce ? new BN(nonce) : undefined,
       balance ? new BN(balance) : undefined,
       stateRoot,
       codeHash,
-    )
+    );
   }
 
   /**
@@ -72,26 +67,26 @@ export class Account {
     stateRoot = KECCAK256_RLP,
     codeHash = KECCAK256_NULL,
   ) {
-    this.nonce = nonce
-    this.balance = balance
-    this.stateRoot = stateRoot
-    this.codeHash = codeHash
+    this.nonce = nonce;
+    this.balance = balance;
+    this.stateRoot = stateRoot;
+    this.codeHash = codeHash;
 
-    this._validate()
+    this._validate();
   }
 
   private _validate() {
     if (this.nonce.lt(new BN(0))) {
-      throw new Error('nonce must be greater than zero')
+      throw new Error("nonce must be greater than zero");
     }
     if (this.balance.lt(new BN(0))) {
-      throw new Error('balance must be greater than zero')
+      throw new Error("balance must be greater than zero");
     }
     if (this.stateRoot.length !== 32) {
-      throw new Error('stateRoot must have a length of 32')
+      throw new Error("stateRoot must have a length of 32");
     }
     if (this.codeHash.length !== 32) {
-      throw new Error('codeHash must have a length of 32')
+      throw new Error("codeHash must have a length of 32");
     }
   }
 
@@ -99,14 +94,21 @@ export class Account {
    * Returns the RLP serialization of the account as a `Buffer`.
    */
   serialize(): Buffer {
-    return rlp.encode([bnToRlp(this.nonce), bnToRlp(this.balance), this.stateRoot, this.codeHash])
+    return rlp.encode(
+      [
+        bnToRlp(this.nonce),
+        bnToRlp(this.balance),
+        this.stateRoot,
+        this.codeHash,
+      ],
+    );
   }
 
   /**
    * Returns a `Boolean` determining if the account is a contract.
    */
   isContract(): boolean {
-    return !this.codeHash.equals(KECCAK256_NULL)
+    return !this.codeHash.equals(KECCAK256_NULL);
   }
 
   /**
@@ -120,17 +122,17 @@ export class Account {
       this.nonce.isZero() &&
       this.stateRoot.equals(KECCAK256_RLP) &&
       this.codeHash.equals(KECCAK256_NULL)
-    )
+    );
   }
 }
 
 /**
  * Checks if the address is a valid. Accepts checksummed addresses too.
  */
-export const isValidAddress = function(hexAddress: string): boolean {
-  assertIsHexString(hexAddress)
-  return /^0x[0-9a-fA-F]{40}$/.test(hexAddress)
-}
+export const isValidAddress = function (hexAddress: string): boolean {
+  assertIsHexString(hexAddress);
+  return /^0x[0-9a-fA-F]{40}$/.test(hexAddress);
+};
 
 /**
  * Returns a checksummed address.
@@ -142,57 +144,63 @@ export const isValidAddress = function(hexAddress: string): boolean {
  * WARNING: Checksums with and without the chainId will differ. As of 2019-06-26, the most commonly
  * used variation in Ethereum was without the chainId. This may change in the future.
  */
-export const toChecksumAddress = function(hexAddress: string, eip1191ChainId?: number): string {
-  assertIsHexString(hexAddress)
-  const address = hexAddress.replace(/^0x/, '').toLowerCase()
+export const toChecksumAddress = function (
+  hexAddress: string,
+  eip1191ChainId?: number,
+): string {
+  assertIsHexString(hexAddress);
+  const address = hexAddress.replace(/^0x/, "").toLowerCase();
 
-  const prefix = eip1191ChainId !== undefined ? eip1191ChainId.toString() + '0x' : ''
+  const prefix = eip1191ChainId !== undefined
+    ? eip1191ChainId.toString() + "0x"
+    : "";
 
-  const hash = keccakFromString(prefix + address).toString('hex')
-  let ret = '0x'
+  const hash = keccakFromString(prefix + address).toString("hex");
+  let ret = "0x";
 
   for (let i = 0; i < address.length; i++) {
     if (parseInt(hash[i], 16) >= 8) {
-      ret += address[i].toUpperCase()
+      ret += address[i].toUpperCase();
     } else {
-      ret += address[i]
+      ret += address[i];
     }
   }
 
-  return ret
-}
+  return ret;
+};
 
 /**
  * Checks if the address is a valid checksummed address.
  *
  * See toChecksumAddress' documentation for details about the eip1191ChainId parameter.
  */
-export const isValidChecksumAddress = function(
+export const isValidChecksumAddress = function (
   hexAddress: string,
   eip1191ChainId?: number,
 ): boolean {
-  return isValidAddress(hexAddress) && toChecksumAddress(hexAddress, eip1191ChainId) === hexAddress
-}
+  return isValidAddress(hexAddress) &&
+    toChecksumAddress(hexAddress, eip1191ChainId) === hexAddress;
+};
 
 /**
  * Generates an address of a newly created contract.
  * @param from The address which is creating this new address
  * @param nonce The nonce of the from account
  */
-export const generateAddress = function(from: Buffer, nonce: Buffer): Buffer {
-  assertIsBuffer(from)
-  assertIsBuffer(nonce)
-  const nonceBN = new BN(nonce)
+export const generateAddress = function (from: Buffer, nonce: Buffer): Buffer {
+  assertIsBuffer(from);
+  assertIsBuffer(nonce);
+  const nonceBN = new BN(nonce);
 
   if (nonceBN.isZero()) {
     // in RLP we want to encode null in the case of zero nonce
     // read the RLP documentation for an answer if you dare
-    return rlphash([from, null]).slice(-20)
+    return rlphash([from, null]).slice(-20);
   }
 
   // Only take the lower 160bits of the hash
-  return rlphash([from, Buffer.from(nonceBN.toArray())]).slice(-20)
-}
+  return rlphash([from, Buffer.from(nonceBN.toArray())]).slice(-20);
+};
 
 /**
  * Generates an address for a contract created using CREATE2.
@@ -200,28 +208,32 @@ export const generateAddress = function(from: Buffer, nonce: Buffer): Buffer {
  * @param salt A salt
  * @param initCode The init code of the contract being created
  */
-export const generateAddress2 = function(from: Buffer, salt: Buffer, initCode: Buffer): Buffer {
-  assertIsBuffer(from)
-  assertIsBuffer(salt)
-  assertIsBuffer(initCode)
+export const generateAddress2 = function (
+  from: Buffer,
+  salt: Buffer,
+  initCode: Buffer,
+): Buffer {
+  assertIsBuffer(from);
+  assertIsBuffer(salt);
+  assertIsBuffer(initCode);
 
-  if(from.length !== 20 || salt.length !== 32){
+  if (from.length !== 20 || salt.length !== 32) {
     throw new Error();
   }
 
   const address = keccak256(
-    Buffer.concat([Buffer.from('ff', 'hex'), from, salt, keccak256(initCode)]),
-  )
+    Buffer.concat([Buffer.from("ff", "hex"), from, salt, keccak256(initCode)]),
+  );
 
-  return address.slice(-20)
-}
+  return address.slice(-20);
+};
 
 /**
  * Checks if the private key satisfies the rules of the curve secp256k1.
  */
-export const isValidPrivate = function(privateKey: Buffer): boolean {
-  return privateKeyVerify(privateKey)
-}
+export const isValidPrivate = function (privateKey: Buffer): boolean {
+  return privateKeyVerify(privateKey);
+};
 
 /**
  * Checks if the public key satisfies the rules of the curve secp256k1
@@ -229,19 +241,22 @@ export const isValidPrivate = function(privateKey: Buffer): boolean {
  * @param publicKey The two points of an uncompressed key, unless sanitize is enabled
  * @param sanitize Accept public keys in other formats
  */
-export const isValidPublic = function(publicKey: Buffer, sanitize = false): boolean {
-  assertIsBuffer(publicKey)
+export const isValidPublic = function (
+  publicKey: Buffer,
+  sanitize = false,
+): boolean {
+  assertIsBuffer(publicKey);
   if (publicKey.length === 64) {
     // Convert to SEC1 for secp256k1
-    return publicKeyVerify(Buffer.concat([Buffer.from([4]), publicKey]))
+    return publicKeyVerify(Buffer.concat([Buffer.from([4]), publicKey]));
   }
 
   if (!sanitize) {
-    return false
+    return false;
   }
 
-  return publicKeyVerify(publicKey)
-}
+  return publicKeyVerify(publicKey);
+};
 
 /**
  * Returns the ethereum address of a given public key.
@@ -249,62 +264,65 @@ export const isValidPublic = function(publicKey: Buffer, sanitize = false): bool
  * @param pubKey The two points of an uncompressed key, unless sanitize is enabled
  * @param sanitize Accept public keys in other formats
  */
-export const pubToAddress = function(pubKey: Buffer, sanitize = false): Buffer {
-  assertIsBuffer(pubKey)
+export const pubToAddress = function (
+  pubKey: Buffer,
+  sanitize = false,
+): Buffer {
+  assertIsBuffer(pubKey);
   if (sanitize && pubKey.length !== 64) {
-    pubKey = Buffer.from(publicKeyConvert(pubKey, false).slice(1))
+    pubKey = Buffer.from(publicKeyConvert(pubKey, false).slice(1));
   }
-  if(pubKey.length !== 64){
+  if (pubKey.length !== 64) {
     throw new Error();
   }
   // Only take the lower 160bits of the hash
-  return keccak(pubKey).slice(-20)
-}
-export const publicToAddress = pubToAddress
+  return keccak(pubKey).slice(-20);
+};
+export const publicToAddress = pubToAddress;
 
 /**
  * Returns the ethereum address of a given private key.
  * @param privateKey A private key must be 256 bits wide
  */
-export const privateToAddress = function(privateKey: Buffer): Buffer {
-  return publicToAddress(privateToPublic(privateKey))
-}
+export const privateToAddress = function (privateKey: Buffer): Buffer {
+  return publicToAddress(privateToPublic(privateKey));
+};
 
 /**
  * Returns the ethereum public key of a given private key.
  * @param privateKey A private key must be 256 bits wide
  */
-export const privateToPublic = function(privateKey: Buffer): Buffer {
-  assertIsBuffer(privateKey)
+export const privateToPublic = function (privateKey: Buffer): Buffer {
+  assertIsBuffer(privateKey);
   // skip the type flag and use the X, Y points
-  return Buffer.from(publicKeyCreate(privateKey, false)).slice(1)
-}
+  return Buffer.from(publicKeyCreate(privateKey, false)).slice(1);
+};
 
 /**
  * Converts a public key to the Ethereum format.
  */
-export const importPublic = function(publicKey: Buffer): Buffer {
-  assertIsBuffer(publicKey)
+export const importPublic = function (publicKey: Buffer): Buffer {
+  assertIsBuffer(publicKey);
   if (publicKey.length !== 64) {
-    publicKey = Buffer.from(publicKeyConvert(publicKey, false).slice(1))
+    publicKey = Buffer.from(publicKeyConvert(publicKey, false).slice(1));
   }
-  return publicKey
-}
+  return publicKey;
+};
 
 /**
  * Returns the zero address.
  */
-export const zeroAddress = function(): string {
-  const addressLength = 20
-  const addr = zeros(addressLength)
-  return bufferToHex(addr)
-}
+export const zeroAddress = function (): string {
+  const addressLength = 20;
+  const addr = zeros(addressLength);
+  return bufferToHex(addr);
+};
 
 /**
  * Checks if a given address is the zero address.
  */
-export const isZeroAddress = function(hexAddress: string): boolean {
-  assertIsHexString(hexAddress)
-  const zeroAddr = zeroAddress()
-  return zeroAddr === hexAddress
-}
+export const isZeroAddress = function (hexAddress: string): boolean {
+  assertIsHexString(hexAddress);
+  const zeroAddr = zeroAddress();
+  return zeroAddr === hexAddress;
+};

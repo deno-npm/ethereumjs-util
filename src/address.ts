@@ -1,31 +1,28 @@
+import { BN, Buffer } from "../deps.js";
+import { toBuffer, zeros } from "./bytes.ts";
 import {
-  BN,
-  Buffer,
-} from "../deps.js"
-import { toBuffer, zeros } from './bytes.ts'
-import {
-  isValidAddress,
-  pubToAddress,
-  privateToAddress,
   generateAddress,
   generateAddress2,
-} from './account.ts'
+  isValidAddress,
+  privateToAddress,
+  pubToAddress,
+} from "./account.ts";
 
 export class Address {
-  public readonly buf: Buffer
+  public readonly buf: Buffer;
 
   constructor(buf: Buffer) {
-    if(buf.length !== 20){
-      throw new Error('Invalid address length');
+    if (buf.length !== 20) {
+      throw new Error("Invalid address length");
     }
-    this.buf = buf
+    this.buf = buf;
   }
 
   /**
    * Returns the zero address.
    */
   static zero(): Address {
-    return new Address(zeros(20))
+    return new Address(zeros(20));
   }
 
   /**
@@ -33,10 +30,10 @@ export class Address {
    * @param str - Hex-encoded address
    */
   static fromString(str: string): Address {
-    if(!isValidAddress(str)){
-      throw new Error('Invalid address');
+    if (!isValidAddress(str)) {
+      throw new Error("Invalid address");
     }
-    return new Address(toBuffer(str))
+    return new Address(toBuffer(str));
   }
 
   /**
@@ -44,11 +41,11 @@ export class Address {
    * @param pubKey The two points of an uncompressed key
    */
   static fromPublicKey(pubKey: Buffer): Address {
-    if(!Buffer.isBuffer(pubKey)){
-      throw new Error('Public key should be Buffer')
+    if (!Buffer.isBuffer(pubKey)) {
+      throw new Error("Public key should be Buffer");
     }
-    const buf = pubToAddress(pubKey)
-    return new Address(buf)
+    const buf = pubToAddress(pubKey);
+    return new Address(buf);
   }
 
   /**
@@ -56,11 +53,11 @@ export class Address {
    * @param privateKey A private key must be 256 bits wide
    */
   static fromPrivateKey(privateKey: Buffer): Address {
-    if(!Buffer.isBuffer(privateKey)){
-      throw new Error('Private key should be Buffer')
+    if (!Buffer.isBuffer(privateKey)) {
+      throw new Error("Private key should be Buffer");
     }
-    const buf = privateToAddress(privateKey)
-    return new Address(buf)
+    const buf = privateToAddress(privateKey);
+    return new Address(buf);
   }
 
   /**
@@ -69,10 +66,10 @@ export class Address {
    * @param nonce The nonce of the from account
    */
   static generate(from: Address, nonce: BN): Address {
-    if(!BN.isBN(nonce)){
+    if (!BN.isBN(nonce)) {
       throw new Error();
     }
-    return new Address(generateAddress(from.buf, nonce.toArrayLike(Buffer)))
+    return new Address(generateAddress(from.buf, nonce.toArrayLike(Buffer)));
   }
 
   /**
@@ -82,30 +79,30 @@ export class Address {
    * @param initCode The init code of the contract being created
    */
   static generate2(from: Address, salt: Buffer, initCode: Buffer): Address {
-    if(!Buffer.isBuffer(salt) || !Buffer.isBuffer(initCode)){
+    if (!Buffer.isBuffer(salt) || !Buffer.isBuffer(initCode)) {
       throw new Error();
     }
-    return new Address(generateAddress2(from.buf, salt, initCode))
+    return new Address(generateAddress2(from.buf, salt, initCode));
   }
 
   /**
    * Is address zero.
    */
   isZero(): boolean {
-    return this.buf.equals(Address.zero().buf)
+    return this.buf.equals(Address.zero().buf);
   }
 
   /**
    * Returns hex encoding of address.
    */
   toString(): string {
-    return '0x' + this.buf.toString('hex')
+    return "0x" + this.buf.toString("hex");
   }
 
   /**
    * Returns Buffer representation of address.
    */
   toBuffer(): Buffer {
-    return Buffer.from(this.buf)
+    return Buffer.from(this.buf);
   }
 }
