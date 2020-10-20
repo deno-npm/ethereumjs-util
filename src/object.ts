@@ -31,6 +31,7 @@ export const defineProperties = function (self: any, fields: any, data?: any) {
   };
 
   self.serialize = function serialize() {
+    //This need to be casted again cause RLP Buffer !== Deno Buffer
     return rlp.encode(self.raw);
   };
 

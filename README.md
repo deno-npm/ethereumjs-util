@@ -20,7 +20,7 @@ import {
   isValidChecksumAddress,
   unpadBuffer,
   BN,
-} from 'https://deno.land/x/npm_ethereumjs_util@0.0.2/mod.ts'
+} from 'https://deno.land/x/npm_ethereumjs_util@0.0.3/mod.ts'
 
 const address = '0x2F015C60E0be116B1f0CD534704Db9c92118FB6A'
 assert(isValidChecksumAddress(address))
